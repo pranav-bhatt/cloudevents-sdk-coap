@@ -70,15 +70,20 @@ impl BinaryDeserializer for CoapRequestDeserializer {
             )?
         }
 
+        let mut temp: String;
+
         for (hn, hv) in self.options.into_iter().filter(|(hn, _)| {
             headers::SPEC_VERSION_OPTION != CoapOption::from(*hn) && *hn >= 2048
             // The first allocation of custom CoAP Option numbers (CE Core + extensions)
         }) {
-            let name = headers::OPTIONS_TO_ATTRIBUTES
-                .get(&hn)
-                .unwrap_or(format!("{}", hn));
+            temp = String::new();
+            match headers::OPTIONS_TO_ATTRIBUTES.get(&hn) {
+                Some(value) => temp.push_str(value),
+                None => temp = hn.to_string(),
+            }
+            let name = temp.as_str();
 
-            if attributes.contains(name) {
+            if attributes.contains(&name) {
                 visitor = visitor.set_attribute(
                     name,
                     MessageAttributeValue::String(String::from_utf8(hv).map_err(|e| {
