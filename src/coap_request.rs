@@ -5,12 +5,13 @@ use cloudevents::message::{
     Result, StructuredDeserializer, StructuredSerializer,
 };
 use cloudevents::{message, Event};
-use coap_lite::{CoapOption, Packet};
+use coap_lite::{CoapOption, CoapRequest, Packet};
 use std::collections::HashMap;
 use std::convert::{From, TryFrom};
+use std::net::SocketAddr;
 use std::str;
 
-/// Wrapper for [`Message`] that implements [`MessageDeserializer`] trait.
+/// Wrapper for [`CoapRequest`] that implements [`MessageDeserializer`] trait.
 pub struct CoapRequestDeserializer {
     pub(crate) options: HashMap<usize, Vec<u8>>,
     pub(crate) payload: Option<Vec<u8>>,
@@ -47,7 +48,7 @@ impl BinaryDeserializer for CoapRequestDeserializer {
                 &self
                     .options
                     .remove(&headers::SPEC_VERSION_OPTION.into())
-                    .unwrap()[..],
+                    .unwrap(),
             )
             .map_err(|e| cloudevents::message::Error::Other {
                 source: Box::new(e),
@@ -70,12 +71,14 @@ impl BinaryDeserializer for CoapRequestDeserializer {
         }
 
         for (hn, hv) in self.options.into_iter().filter(|(hn, _)| {
-            headers::SPEC_VERSION_OPTION != CoapOption::from(*hn)
-                && headers::CLOUDEVENTS_COAP_MAPPINGS.contains(hn)
+            headers::SPEC_VERSION_OPTION != CoapOption::from(*hn) && *hn >= 2048
+            // The first allocation of custom CoAP Option numbers (CE Core + extensions)
         }) {
-            let name = &headers::OPTIONS_TO_ATTRIBUTES.get(&hn).unwrap();
+            let name = headers::OPTIONS_TO_ATTRIBUTES
+                .get(&hn)
+                .unwrap_or(format!("{}", hn));
 
-            if attributes.contains(&name) {
+            if attributes.contains(name) {
                 visitor = visitor.set_attribute(
                     name,
                     MessageAttributeValue::String(String::from_utf8(hv).map_err(|e| {
@@ -132,8 +135,8 @@ impl MessageDeserializer for CoapRequestDeserializer {
 }
 
 /// Method to transform a [`Message`] to [`Event`].
-pub fn record_to_event(pkt: &Packet) -> Result<Event> {
-    MessageDeserializer::into_event(CoapRequestDeserializer::new(pkt)?)
+pub fn request_to_event(request: &CoapRequest<SocketAddr>) -> Result<Event> {
+    MessageDeserializer::into_event(CoapRequestDeserializer::new(&request.message)?)
 }
 
 /// Extension Trait for [`Message`] which acts as a wrapper for the function [`record_to_event()`].
@@ -144,14 +147,14 @@ pub trait MessageExt: private::Sealed {
     fn to_event(&self) -> Result<Event>;
 }
 
-impl MessageExt for Packet {
+impl MessageExt for CoapRequest<SocketAddr> {
     fn to_event(&self) -> Result<Event> {
-        record_to_event(self)
+        request_to_event(self)
     }
 }
 
 mod private {
     // Sealing the MessageExt
     pub trait Sealed {}
-    impl Sealed for coap_lite::Packet {}
+    impl Sealed for coap_lite::CoapRequest<std::net::SocketAddr> {}
 }

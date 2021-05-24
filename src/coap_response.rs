@@ -29,7 +29,7 @@ impl CoapMessage {
 
     /// Create a new [`CoapMessage`], filled with `event` serialized in binary mode.
     pub fn from_event(event: Event) -> Result<Self> {
-        BinaryDeserializer::deserialize_binary(event, CoapMessage::new())
+        BinaryDeserializer::deserialize_binary(event, Self::new())
     }
 }
 
@@ -65,7 +65,7 @@ impl BinarySerializer<CoapMessage> for CoapMessage {
     fn set_extension(mut self, name: &str, value: MessageAttributeValue) -> Result<Self> {
         // Try to obtain usize from &str
         let option_number = name.parse::<usize>().unwrap();
-        // If option type is reserved by the spec, or has already been set 
+        // If option type is reserved by the spec, or has already been set
         // (convert LinkedList to bytes and store for multiple values per option)
         if self.options.contains(&option_number) {
             return Err(cloudevents::message::Error::UnknownAttribute {

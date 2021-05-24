@@ -38,8 +38,6 @@ lazy_static! {
 pub(crate) static SPEC_VERSION_OPTION: CoapOption = CoapOption::Unknown(2050);
 pub(crate) static CONTENT_TYPE: CoapOption = CoapOption::ContentFormat;
 pub(crate) static CLOUDEVENTS_JSON_HEADER: &'static str = "application/cloudevents+json";
-pub(crate) static CLOUDEVENTS_COAP_MAPPINGS: [usize; 8] =
-    [12, 2048, 2049, 2050, 2051, 2052, 2053, 2054];
 
 // Drogue-IoT extention attribute: `auth-token`
 // pub(crate) static AUTH_TOKEN_OPTION: CoapOption = CoapOption::Unknown(2055);
