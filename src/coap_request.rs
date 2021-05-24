@@ -20,8 +20,7 @@ impl CoapRequestDeserializer {
     fn get_coap_options(packet: &Packet) -> Result<HashMap<usize, Vec<u8>>> {
         let mut hm = HashMap::new();
         let options = packet.options();
-        // TODO create an error variant for invalid headers
-        //.ok_or(cloudevents::message::Error::WrongEncoding {})?;
+
         for i in options {
             let option = (i.0.clone(), i.1.iter().next().unwrap().clone());
             hm.insert(option.0, option.1);

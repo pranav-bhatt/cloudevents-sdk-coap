@@ -85,7 +85,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "cloudevents-sdk-coap-rs"
+name = "cloudevents-sdk-coap"
 version = "0.1.0"
 dependencies = [
  "cloudevents-sdk",
