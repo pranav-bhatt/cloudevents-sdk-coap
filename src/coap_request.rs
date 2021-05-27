@@ -7,7 +7,7 @@ use cloudevents::message::{
 use cloudevents::{message, Event};
 use coap_lite::{CoapOption, CoapRequest, Packet};
 use std::collections::HashMap;
-use std::convert::{From, TryFrom};
+use std::convert::TryFrom;
 use std::net::SocketAddr;
 use std::str;
 
@@ -72,10 +72,8 @@ impl BinaryDeserializer for CoapRequestDeserializer {
 
         let mut temp: String;
 
-        for (hn, hv) in self.options.into_iter().filter(|(hn, _)| {
-            headers::SPEC_VERSION_OPTION != CoapOption::from(*hn) && *hn >= 2048
+        for (hn, hv) in self.options.into_iter().filter(|(hn, _)| *hn >= 2048) {
             // The first allocation of custom CoAP Option numbers (CE Core + extensions)
-        }) {
             let name: &str;
             match headers::OPTIONS_TO_ATTRIBUTES.get(&hn) {
                 Some(value) => name = value,
