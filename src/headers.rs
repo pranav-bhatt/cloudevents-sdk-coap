@@ -23,7 +23,7 @@ fn attributes_to_options() -> HashMap<&'static str, CoapOption> {
     attr_to_op.insert("type", CoapOption::Unknown(4203));
     attr_to_op.insert("datacontenttype", CoapOption::ContentFormat);
     attr_to_op.insert("dataschema", CoapOption::Unknown(4204));
-    attr_to_op.insert("subject", CoapOption::Unknown(4205));
+    attr_to_op.insert("subject", CoapOption::UriPath);
     attr_to_op.insert("time", CoapOption::Unknown(4206));
     attr_to_op
 }

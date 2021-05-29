@@ -1,14 +1,13 @@
 use crate::headers;
 use cloudevents::event::SpecVersion;
+use cloudevents::message;
 use cloudevents::message::{
     BinaryDeserializer, BinarySerializer, Encoding, MessageAttributeValue, MessageDeserializer,
     Result, StructuredDeserializer, StructuredSerializer,
 };
-use cloudevents::{message, Event};
-use coap_lite::{CoapOption, CoapRequest, Packet};
+use coap_lite::{CoapOption, Packet};
 use std::collections::HashMap;
 use std::convert::TryFrom;
-use std::net::SocketAddr;
 use std::str;
 
 /// Wrapper for [`CoapRequest`] that implements [`MessageDeserializer`] trait.
@@ -72,7 +71,12 @@ impl BinaryDeserializer for CoapRequestDeserializer {
 
         let mut temp: String;
 
-        for (hn, hv) in self.options.into_iter().filter(|(hn, _)| *hn >= 2048) {
+        for (hn, hv) in self
+            .options
+            .into_iter()
+            .filter(|(hn, _)| *hn >= 2048 || *hn == 11)
+        {
+            // CoAP Option 11: Uri-Path
             // The first allocation of custom CoAP Option numbers (CE Core + extensions)
             let name: &str;
             match headers::OPTIONS_TO_ATTRIBUTES.get(&hn) {
@@ -137,29 +141,4 @@ impl MessageDeserializer for CoapRequestDeserializer {
             _ => Encoding::UNKNOWN,
         }
     }
-}
-
-/// Method to transform a [`Message`] to [`Event`].
-pub fn request_to_event(request: &CoapRequest<SocketAddr>) -> Result<Event> {
-    MessageDeserializer::into_event(CoapRequestDeserializer::new(&request.message)?)
-}
-
-/// Extension Trait for [`Message`] which acts as a wrapper for the function [`record_to_event()`].
-///
-/// This trait is sealed and cannot be implemented for types outside of this crate.
-pub trait MessageExt: private::Sealed {
-    /// Generates [`Event`] from [`BorrowedMessage`].
-    fn to_event(&self) -> Result<Event>;
-}
-
-impl MessageExt for CoapRequest<SocketAddr> {
-    fn to_event(&self) -> Result<Event> {
-        request_to_event(self)
-    }
-}
-
-mod private {
-    // Sealing the MessageExt
-    pub trait Sealed {}
-    impl Sealed for coap_lite::CoapRequest<std::net::SocketAddr> {}
 }

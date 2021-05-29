@@ -116,11 +116,11 @@ impl StructuredSerializer<CoapMessage> for CoapMessage {
 /// Extension Trait for [`CoapRequest`] that creates a new CoapRequest and fills it with an [`Event`].
 ///
 /// This trait is sealed and cannot be implemented for types outside of this crate.
-pub trait CoapRequestExt<'a>: private::Sealed {
+pub trait CoapRequestExt: private::Sealed {
     fn from_event(event: Event) -> Result<CoapRequest<SocketAddr>>;
 }
 
-impl<'a> CoapRequestExt<'a> for CoapRequest<SocketAddr> {
+impl CoapRequestExt for CoapRequest<SocketAddr> {
     fn from_event(event: Event) -> Result<CoapRequest<SocketAddr>> {
         Ok(CoapMessage::from_event(event).unwrap().coap_message)
     }
@@ -130,5 +130,5 @@ mod private {
     // Sealing the CoapRequestExt
     pub trait Sealed {}
 
-    impl<Endpoint> Sealed for coap_lite::CoapRequest<Endpoint> {}
+    impl Sealed for coap_lite::CoapRequest<std::net::SocketAddr> {}
 }
