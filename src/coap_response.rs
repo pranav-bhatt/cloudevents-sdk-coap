@@ -50,6 +50,29 @@ impl BinarySerializer<CoapMessage> for CoapMessage {
     }
 
     fn set_attribute(mut self, name: &str, value: MessageAttributeValue) -> Result<Self> {
+        // Drogue IoT specific
+        if self
+            .coap_message
+            .message
+            .get_option(CoapOption::ContentFormat)
+            == None
+        {
+            self.coap_message.message.add_option(
+                CoapOption::ContentFormat,
+                "application/octet-stream".as_bytes().to_vec(),
+            );
+        }
+        if self
+            .coap_message
+            .message
+            .get_option(CoapOption::Unknown(4203))
+            == None
+        {
+            self.coap_message.message.add_option(
+                CoapOption::Unknown(4203),
+                "io.drogue.event.v1".as_bytes().to_vec(),
+            );
+        }
         self.coap_message.message.add_option(
             *headers::ATTRIBUTES_TO_OPTIONS.get(name).ok_or(
                 cloudevents::message::Error::UnknownAttribute {

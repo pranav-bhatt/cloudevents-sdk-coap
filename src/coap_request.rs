@@ -12,18 +12,41 @@ use std::str;
 
 /// Wrapper for [`CoapRequest`] that implements [`MessageDeserializer`] trait.
 pub struct CoapRequestDeserializer {
-    pub(crate) options: HashMap<usize, Vec<u8>>,
+    pub(crate) options: HashMap<usize, String>,
     pub(crate) payload: Option<Vec<u8>>,
 }
 
 impl CoapRequestDeserializer {
-    fn get_coap_options(packet: &Packet) -> Result<HashMap<usize, Vec<u8>>> {
+    fn get_coap_options(packet: &Packet) -> Result<HashMap<usize, String>> {
         let mut hm = HashMap::new();
         let options = packet.options();
 
+        let mut hv = String::new();
+
         for i in options {
-            let option = (i.0.clone(), i.1.iter().next().unwrap().clone());
-            hm.insert(option.0, option.1);
+            // Drogue IoT specific
+            match CoapOption::from(*i.0) {
+                CoapOption::UriPath => {
+                    for j in i.1.clone() {
+                        hv.push_str(str::from_utf8(&j).map_err(|e| {
+                            cloudevents::message::Error::Other {
+                                source: Box::new(e),
+                            }
+                        })?);
+                        hv.push('/');
+                    }
+                    // Removing trailing '/'
+                    hv.pop();
+                }
+                _ => {
+                    hv = String::from_utf8(i.1.back().unwrap().clone()).map_err(|e| {
+                        cloudevents::message::Error::Other {
+                            source: Box::new(e),
+                        }
+                    })?
+                }
+            }
+            hm.insert(*i.0, hv.clone());
         }
         Ok(hm)
     }
@@ -43,15 +66,10 @@ impl BinaryDeserializer for CoapRequestDeserializer {
         }
 
         let spec_version = SpecVersion::try_from(
-            str::from_utf8(
-                &self
-                    .options
-                    .remove(&headers::SPEC_VERSION_OPTION.into())
-                    .unwrap(),
-            )
-            .map_err(|e| cloudevents::message::Error::Other {
-                source: Box::new(e),
-            })?,
+            &self
+                .options
+                .remove(&headers::SPEC_VERSION_OPTION.into())
+                .unwrap()[..],
         )?;
 
         visitor = visitor.set_spec_version(spec_version.clone())?;
@@ -59,14 +77,7 @@ impl BinaryDeserializer for CoapRequestDeserializer {
         let attributes = spec_version.attribute_names();
 
         if let Some(hv) = self.options.remove(&CoapOption::ContentFormat.into()) {
-            visitor = visitor.set_attribute(
-                "datacontenttype",
-                MessageAttributeValue::String(String::from_utf8(hv).map_err(|e| {
-                    cloudevents::message::Error::Other {
-                        source: Box::new(e),
-                    }
-                })?),
-            )?
+            visitor = visitor.set_attribute("datacontenttype", MessageAttributeValue::String(hv))?
         }
 
         let mut temp: String;
@@ -88,23 +99,9 @@ impl BinaryDeserializer for CoapRequestDeserializer {
             }
 
             if attributes.contains(&name) {
-                visitor = visitor.set_attribute(
-                    name,
-                    MessageAttributeValue::String(String::from_utf8(hv).map_err(|e| {
-                        cloudevents::message::Error::Other {
-                            source: Box::new(e),
-                        }
-                    })?),
-                )?
+                visitor = visitor.set_attribute(name, MessageAttributeValue::String(hv))?
             } else {
-                visitor = visitor.set_extension(
-                    name,
-                    MessageAttributeValue::String(String::from_utf8(hv).map_err(|e| {
-                        cloudevents::message::Error::Other {
-                            source: Box::new(e),
-                        }
-                    })?),
-                )?
+                visitor = visitor.set_extension(name, MessageAttributeValue::String(hv))?
             }
         }
 
@@ -130,10 +127,8 @@ impl MessageDeserializer for CoapRequestDeserializer {
         match (
             self.options
                 .get(&CoapOption::ContentFormat.into())
-                .map(|s| String::from_utf8(s.to_vec()).ok())
-                .flatten()
-                .map(|s| s.starts_with(headers::CLOUDEVENTS_JSON_HEADER))
-                .unwrap_or(false),
+                .unwrap()
+                .starts_with(headers::CLOUDEVENTS_JSON_HEADER),
             self.options.get(&headers::SPEC_VERSION_OPTION.into()),
         ) {
             (true, _) => Encoding::STRUCTURED,

@@ -10,7 +10,7 @@ fn options_to_attributes() -> HashMap<usize, &'static str> {
     op_to_attr.insert(4203, "type");
     op_to_attr.insert(12, "datacontenttype");
     op_to_attr.insert(4204, "dataschema");
-    op_to_attr.insert(4205, "subject");
+    op_to_attr.insert(11, "subject");
     op_to_attr.insert(4206, "time");
     op_to_attr
 }

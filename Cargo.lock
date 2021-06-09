@@ -68,8 +68,6 @@ dependencies = [
 [[package]]
 name = "cloudevents-sdk"
 version = "0.3.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a7c9f6054fbd2d641a2d275e44f922a3816a6cf51751fb0f72fcf26e27209dfd"
 dependencies = [
  "base64",
  "bitflags",
