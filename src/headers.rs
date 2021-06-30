@@ -2,8 +2,8 @@ use coap_lite::CoapOption;
 use lazy_static::lazy_static;
 use std::collections::HashMap;
 
-fn options_to_attributes() -> HashMap<usize, &'static str> {
-    let mut op_to_attr = HashMap::new();
+fn options_to_attributes() -> HashMap<u16, &'static str> {
+    let mut op_to_attr: HashMap<u16, &str> = HashMap::new();
     op_to_attr.insert(4200, "id");
     op_to_attr.insert(4201, "source");
     op_to_attr.insert(4202, "specversion"); // TODO redundant. Come back to this later
@@ -31,7 +31,7 @@ fn attributes_to_options() -> HashMap<&'static str, CoapOption> {
 lazy_static! {
     pub(crate) static ref ATTRIBUTES_TO_OPTIONS: HashMap<&'static str, CoapOption> =
         attributes_to_options();
-    pub(crate) static ref OPTIONS_TO_ATTRIBUTES: HashMap<usize, &'static str> =
+    pub(crate) static ref OPTIONS_TO_ATTRIBUTES: HashMap<u16, &'static str> =
         options_to_attributes();
 }
 

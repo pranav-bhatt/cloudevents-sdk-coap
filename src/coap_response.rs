@@ -15,7 +15,7 @@ use std::net::SocketAddr;
 /// or [`BinaryDeserializer::deserialize_binary`].
 pub struct CoapMessage {
     pub(crate) coap_message: CoapRequest<SocketAddr>,
-    options: Vec<usize>,
+    options: Vec<u16>,
 }
 
 impl CoapMessage {
@@ -87,7 +87,7 @@ impl BinarySerializer<CoapMessage> for CoapMessage {
 
     fn set_extension(mut self, name: &str, value: MessageAttributeValue) -> Result<Self> {
         // Try to obtain usize from &str
-        let option_number = name.parse::<usize>().unwrap();
+        let option_number = name.parse::<u16>().unwrap();
         // If option type is reserved by the spec, or has already been set
         // (convert LinkedList to bytes and store for multiple values per option)
         if self.options.contains(&option_number) {

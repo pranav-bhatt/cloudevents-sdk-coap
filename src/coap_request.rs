@@ -12,12 +12,12 @@ use std::str;
 
 /// Wrapper for [`CoapRequest`] that implements [`MessageDeserializer`] trait.
 pub struct CoapRequestDeserializer {
-    pub(crate) options: HashMap<usize, String>,
+    pub(crate) options: HashMap<u16, String>,
     pub(crate) payload: Option<Vec<u8>>,
 }
 
 impl CoapRequestDeserializer {
-    fn get_coap_options(packet: &Packet) -> Result<HashMap<usize, String>> {
+    fn get_coap_options(packet: &Packet) -> Result<HashMap<u16, String>> {
         let mut hm = HashMap::new();
         let options = packet.options();
 
